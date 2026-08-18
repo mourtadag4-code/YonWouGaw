@@ -14,10 +14,32 @@ st.set_page_config(
 )
 
 # ---------- CONNEXION À FIREBASE ----------
+import json
+
+# ---------- CONNEXION À FIREBASE ----------
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase-credentials.json")
+    # Lire depuis les secrets Streamlit (si disponible)
+    if 'firebase_type' in st.secrets:
+        # Reconstruire le dictionnaire des identifiants à partir des secrets
+        cred_dict = {
+            "type": st.secrets["firebase_type"],
+            "project_id": st.secrets["firebase_project_id"],
+            "private_key_id": st.secrets["firebase_private_key_id"],
+            "private_key": st.secrets["firebase_private_key"],
+            "client_email": st.secrets["firebase_client_email"],
+            "client_id": st.secrets["firebase_client_id"],
+            "auth_uri": st.secrets["firebase_auth_uri"],
+            "token_uri": st.secrets["firebase_token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["firebase_auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["firebase_client_x509_cert_url"]
+        }
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # En local, lire le fichier
+        cred = credentials.Certificate("firebase-credentials.json")
+    
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://yonwougaw-default-rtdb.firebaseio.com/'  # ← À MODIFIER
+        'databaseURL': 'https://yonwougaw-default-rtdb.firebaseio.com/'
     })
 
 # ---------- EN-TÊTE ----------
