@@ -1,0 +1,6 @@
+streamlit
+firebase-admin
+folium
+streamlit-folium
+streamlit-geolocation
+pandas
