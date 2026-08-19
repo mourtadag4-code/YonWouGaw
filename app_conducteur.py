@@ -4,6 +4,7 @@ from firebase_admin import credentials, db
 from datetime import datetime
 import pandas as pd
 import time
+import json
 
 st.set_page_config(
     page_title="YonWouGaw - Conducteur",
@@ -12,13 +13,9 @@ st.set_page_config(
 )
 
 # ---------- CONNEXION À FIREBASE ----------
-import json
-
-# ---------- CONNEXION À FIREBASE ----------
 if not firebase_admin._apps:
     # Lire depuis les secrets Streamlit (si disponible)
     if 'firebase_type' in st.secrets:
-        # Reconstruire le dictionnaire des identifiants à partir des secrets
         cred_dict = {
             "type": st.secrets["firebase_type"],
             "project_id": st.secrets["firebase_project_id"],
@@ -33,7 +30,6 @@ if not firebase_admin._apps:
         }
         cred = credentials.Certificate(cred_dict)
     else:
-        # En local, lire le fichier
         cred = credentials.Certificate("firebase-credentials.json")
     
     firebase_admin.initialize_app(cred, {
@@ -59,7 +55,6 @@ if location and location.get("latitude") is not None:
     lon = float(location["longitude"])
     st.success(f"📍 Position automatique : {lat:.6f}, {lon:.6f}")
 else:
-    # Fallback : coordonnées par défaut si GPS non disponible
     lat = 14.7167
     lon = -17.4677
     st.warning("⚠️ En attente du GPS... Utilisation des coordonnées par défaut")
@@ -108,7 +103,7 @@ if st.session_state.partage_actif:
     map_df = pd.DataFrame({'lat': [lat], 'lon': [lon]})
     st.map(map_df, zoom=14)
     
-    # Afficher un compteur de temps écoulé
+    # Afficher un compteur de temps écoulé (rafraîchissement toutes les 3 secondes)
     placeholder = st.empty()
     for i in range(3, 0, -1):
         placeholder.info(f"⏳ Prochaine mise à jour dans {i} secondes...")
