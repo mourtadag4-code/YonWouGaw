@@ -98,6 +98,18 @@ if bus_data:
             # Récupérer l'URL Firebase
             firebase_url = 'https://yonwougaw-default-rtdb.firebaseio.com/'
 
+            # ---------- CONFIGURATION FIREBASE POUR LE JAVASCRIPT ----------
+            # Récupérer les paramètres depuis les secrets Streamlit
+            firebase_config = {
+                "apiKey": st.secrets["firebase_api_key"],
+                "authDomain": st.secrets["firebase_auth_domain"],
+                "databaseURL": st.secrets["firebase_database_url"],
+                "projectId": st.secrets["firebase_project_id"],
+                "storageBucket": st.secrets["firebase_storage_bucket"],
+                "messagingSenderId": st.secrets["firebase_messaging_sender_id"],
+                "appId": st.secrets["firebase_app_id"]
+            }
+
             # Construire le code HTML/CSS/JavaScript comme une chaîne
             html_code = f"""
             <!-- PWA manifest -->
@@ -120,17 +132,8 @@ if bus_data:
             <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
             <script>
-                // Configuration Firebase
-                var firebaseConfig = {{
-                    apiKey: "AIzaSyDZK-APr0ahe97QBacjpOuvEA0voRZ3jyY",
-                    authDomain: "yonwougaw.firebaseapp.com",
-                    databaseURL: "https://yonwougaw-default-rtdb.firebaseio.com",
-                    projectId: "yonwougaw",
-                    storageBucket: "yonwougaw.firebasestorage.app",
-                    messagingSenderId: "744242371529",
-                    appId: "1:744242371529:web:0d88ab5d83901693e82618",
-                    measurementId: "G-1NB24N3ELN"
-                }};
+                // Configuration Firebase (injectée depuis les secrets)
+                var firebaseConfig = {json.dumps(firebase_config)};
                 firebase.initializeApp(firebaseConfig);
             </script>
 
