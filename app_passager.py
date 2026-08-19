@@ -100,6 +100,11 @@ if bus_data:
 
             # Construire le code HTML/CSS/JavaScript comme une chaîne
             html_code = f"""
+            <!-- PWA manifest -->
+            <link rel="manifest" href="/manifest.json">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
             <div id="map-container" style="height:400px; width:100%;"></div>
             <div id="info" style="margin-top:10px; font-size:14px; color:gray;">
                 🟢 Mise à jour automatique toutes les 3 secondes
@@ -109,6 +114,25 @@ if bus_data:
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+            <!-- Firebase SDK -->
+            <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+            <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+            <script>
+                // Configuration Firebase
+                var firebaseConfig = {{
+                    apiKey: "AIzaSyDZK-APr0ahe97QBacjpOuvEA0voRZ3jyY",
+                    authDomain: "yonwougaw.firebaseapp.com",
+                    databaseURL: "https://yonwougaw-default-rtdb.firebaseio.com",
+                    projectId: "yonwougaw",
+                    storageBucket: "yonwougaw.firebasestorage.app",
+                    messagingSenderId: "744242371529",
+                    appId: "1:744242371529:web:0d88ab5d83901693e82618",
+                    measurementId: "G-1NB24N3ELN"
+                }};
+                firebase.initializeApp(firebaseConfig);
+            </script>
 
             <style>
             .custom-icon-bus {{
@@ -197,38 +221,66 @@ if bus_data:
                     passengerMarker.setIcon(createPassengerIcon(zoom));
                 }});
                 
-                // ---------- MISE À JOUR DE LA POSITION DU BUS ----------
-                function updateMap() {{
-                    fetch('{firebase_url}bus/{bus_choisi}.json')
-                        .then(response => response.json())
-                        .then(data => {{
-                            if (data && data.active) {{
-                                const busLat = data.lat;
-                                const busLon = data.lon;
-                                
-                                busMarker.setLatLng([busLat, busLon]);
-                                line.setLatLngs([
-                                    [busLat, busLon],
-                                    [{passager_lat}, {passager_lon}]
-                                ]);
-                                
-                                document.getElementById('info').innerHTML = 
-                                    '🟢 Dernière mise à jour : ' + new Date().toLocaleTimeString();
-                            }}
-                        }})
-                        .catch(error => {{
-                            console.error('Erreur:', error);
-                            document.getElementById('info').innerHTML = '🔴 Erreur de connexion';
-                        }});
-                }}
+                // ---------- ÉCOUTE EN TEMPS RÉEL (LISTENER) ----------
+                // On s'abonne à Firebase : à chaque changement, la carte se met à jour
+                var busRef = firebase.database().ref('bus/{bus_choisi}');
+                busRef.on('value', function(snapshot) {{
+                    var data = snapshot.val();
+                    if (data && data.active) {{
+                        const busLat = data.lat;
+                        const busLon = data.lon;
+                        
+                        // Mettre à jour le marqueur du bus
+                        busMarker.setLatLng([busLat, busLon]);
+                        
+                        // Mettre à jour la ligne
+                        line.setLatLngs([
+                            [busLat, busLon],
+                            [{passager_lat}, {passager_lon}]
+                        ]);
+                        
+                        // Mettre à jour l'info
+                        document.getElementById('info').innerHTML = 
+                            '🟢 Mise à jour en temps réel : ' + new Date().toLocaleTimeString();
+                    }}
+                }});
                 
-                setInterval(updateMap, 3000);
-                updateMap();
+                // Afficher un message de statut
+                document.getElementById('info').innerHTML = 
+                    '🟢 Connecté en temps réel - En attente des données du bus...';
             </script>
             """
 
             # Afficher le composant HTML
             st.components.v1.html(html_code, height=450)
+
+            # Après le code HTML de la carte, avant l'affichage des coordonnées
+            st.subheader("📱 Installer l'application")
+
+            st.markdown("""
+            **Pour installer YonWouGaw sur votre téléphone :**
+
+            1. Ouvrez cette page dans **Chrome** sur Android
+            2. Cliquez sur le menu (⋮) → **"Installer l'application"** ou **"Ajouter à l'écran d'accueil"**
+            3. Suivez les instructions
+
+            💡 Une fois installée, l'application s'ouvrira en plein écran et pourra fonctionner en arrière-plan !
+            """)
+
+            # Ajout du script d'enregistrement du Service Worker
+            st.components.v1.html("""
+            <script>
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker enregistré avec succès');
+                    })
+                    .catch(function(error) {
+                        console.log('Erreur lors de l\'enregistrement du Service Worker:', error);
+                    });
+            }
+            </script>
+            """, height=50)
             
             # Afficher les coordonnées détaillées
             with st.expander("📍 Coordonnées détaillées"):
